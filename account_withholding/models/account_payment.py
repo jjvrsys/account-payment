@@ -28,7 +28,7 @@ class AccountPayment(models.Model):
     )
 
     def _get_valid_liquidity_accounts(self):
-        res = super()._get_valid_liquidity_accounts()
+        res = list(super()._get_valid_liquidity_accounts())
         if self.tax_withholding_id:
             # si es un withholding payment entonces la cuenta de liquidez puede ser cualquier cuenta utilizda en una
             # repatition line ya que podemos estar cambiando de impuesto (y al llegar a este paso no sabemos el
@@ -39,9 +39,9 @@ class AccountPayment(models.Model):
                 [('company_id', '=', self.company_id.id), '|',
                     ('invoice_tax_id.type_tax_use', 'in', ['supplier', 'customer']),
                     ('refund_tax_id.type_tax_use', 'in', ['supplier', 'customer'])])
-            res |= rep_lines.mapped('account_id')
+            res.extend(rep_lines.mapped('account_id'))
 
-        return res
+        return tuple(res)
 
     def action_post(self):
         without_number = self.filtered(
